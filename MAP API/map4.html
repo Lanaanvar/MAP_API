@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Map User Location</title>
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+
+    <!-- Make sure you put this AFTER Leaflet's CSS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+    <style>
+        #map {
+            height: 550px;
+            width: 750px;
+            margin-left: 370px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Map User Location</h1>
+
+    <div id="map" draggable="true"></div>
+
+    <!-- <img id="radarImage" src="" alt="Weather Radar Image" /> -->
+
+    <script>
+        const map = L.map("map");
+        // Initializes map
+
+        map.setView([11.244313, 76.203288], 13);
+        // Sets initial coordinates and zoom level
+
+        L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+            maxZoom: 19,
+            attribution: "© OpenStreetMap",
+        }).addTo(map);
+        // Sets map data source and associates with map
+
+        let marker, circle, zoomed;
+
+        navigator.geolocation.watchPosition(success, error);
+
+        function success(pos) {
+            const lat = pos.coords.latitude;
+            const lng = pos.coords.longitude;
+            const accuracy = pos.coords.accuracy;
+
+            if (marker) {
+                map.removeLayer(marker);
+                map.removeLayer(circle);
+            }
+            // Removes any existing marker and circle (new ones about to be set)
+
+            marker = L.marker([lat, lng]).addTo(map);
+            circle = L.circle([lat, lng], { radius: accuracy }).addTo(map);
+            // Adds marker to the map and a circle for accuracy
+
+            if (!zoomed) {
+                zoomed = map.fitBounds(circle.getBounds());
+            }
+            // Set zoom to boundaries of accuracy circle
+
+            map.setView([lat, lng]);
+            // Set map focus to current user position
+
+            updateWeatherData();
+        }
+
+        function error(err) {
+            if (err.code === 1) {
+                alert("Please allow geolocation access");
+            } else {
+                alert("Cannot get current location");
+            }
+        }
+
+        function updateWeatherData() {
+            const apiKey = "83fc9d201659b4b40cef1be95f3b2418";
+            const apiUrl = `https://tile.openweathermap.org/map/precipitation_new/{z}/{x}/{y}.png?appid=${apiKey}`;
+
+            L.tileLayer(apiUrl, {
+                maxZoom: 19,
+                opacity: 0.5,
+            }).addTo(map);
+        }
+
+        // Fetch and update weather data initially
+        success();
+
+        // Fetch and update weather data every 5 minutes
+        setInterval(success, 5 * 60 * 1000);
+
+    </script>
+
+</body>
+
+</html>
